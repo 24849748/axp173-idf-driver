@@ -4,15 +4,14 @@
 #include "driver/i2c.h"
 
 
-/* conf param */
+/* ↓ custom define */
 //pin by SmartIR picoD4 board 
 #define PIN_I2C_SDA         4
 #define PIN_I2C_SCL         21
-
 #define I2C_PULLUP_EN       0
 #define I2C_SPEED_FREQ_HZ   200000
 
-
+/* ↑ custom define */
 
 #define NULL_I2C_REG_ADDR   0xFF    //无效寄存器地址
 #define NULL_I2C_DEV_ADDR   0xFF    //无效设备地址

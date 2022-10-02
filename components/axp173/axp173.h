@@ -3,11 +3,12 @@
 
 #include "driver/i2c.h"
 
+/* ↓ custom define */
 #define AXP173_I2C_PORT         I2C_NUM_0
+/* ↑ custom define */
+
 #define AXP173_I2C_ADDR         (0x34)      //axp173 i2c address
 
-// #define AXP173_ADDR_READ        (0x69)
-// #define AXP173_ADDR_WRITE       (0x68)
 
 /* registers */
 #define AXP173_POWER_STATUS     (0x00)

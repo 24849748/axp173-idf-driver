@@ -54,7 +54,7 @@ void axp173_test3(void){
 void app_main(void) {   
 
     //需要先初始化i2c总线
-    i2c_bus_init(I2C_NUM_0);
+    i2c_bus_init(AXP173_I2C_PORT);
 
     axp173 = axp173_create(AXP173_I2C_PORT, AXP173_I2C_ADDR);
     axp173_test1();
@@ -66,6 +66,14 @@ void app_main(void) {
     axp173_delete(&axp173);
 }
 
+/**
+ * 1.复制components文件夹下axp173、bus两个组件到工程中
+ * 2.修改头文件中相关引脚定义
+ * 3.使用 i2c_bus_init() 函数初始化 I2C 总线
+ * 4.使用 axp173_create() 函数创建设备句柄
+ * 5.执行你的操作
+ * 6.使用完成后使用 axp173_delete() 函数释放资源
+ */
 
 
 /* 
