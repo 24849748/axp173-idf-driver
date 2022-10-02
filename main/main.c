@@ -18,90 +18,52 @@
 
 static axp173_handle_t axp173;
 
-
-void axp173_test3(void){
-    axp173 = axp173_create(AXP173_I2C_PORT, AXP173_I2C_ADDR);
-
-    float bat_volt;
-    axp173_enable_adc(axp173, ADC_ENABLE_BIT_BAT_VOLT, 1);
-    axp173_get_bat_volt(axp173, &bat_volt);
-    // axp173_set_charge_current(axp173, CHARGE_CURRENT_mA_1240);
-}
-
-/* 
+//读取电池信息
 void axp173_test1(void){
-    i2c_bus_init(I2C_NUM_0);
-    axp173_init(AXP173_I2C_PORT, AXP173_I2C_ADDR);
-
     float bat;
     axp173_bat_info_t bat_info;
-    //setting
-    // axp173_enable_adc(ADC_ENABLE_BIT_VBUS_VOLT, 1);
-    axp173_enable_adc(ADC_ENABLE_BIT_BAT_VOLT, 1);
+
+    axp173_enable_adc(axp173, ADC_ENABLE_BIT_BAT_VOLT, 1);
     while(1){
-        // axp173_get_VBUS_volt(&bat);
-        axp173_get_bat_volt(&bat);
-        axp173_get_bat_status(&bat_info);
+        axp173_get_bat_volt(axp173, &bat);
+        axp173_get_bat_status(axp173, &bat_info);
         vTaskDelay(500/portTICK_PERIOD_MS);
     }
 }
 
 //设置电压 通道控制
-void axp173_test2(){
+void axp173_test2(void){
+
+    axp173_power_output_ctrl(axp173, OUTPUT_SW_LDO2, 1);
+    axp173_power_output_ctrl(axp173, OUTPUT_SW_LDO3, 1);
+
+    axp173_set_LDO2_volt(axp173, 2.0);
+    axp173_set_LDO3_volt(axp173, 3.0);
+
+    axp173_delete(&axp173);
+}
+
+
+void axp173_test3(void){
+    float bat_volt;
+    axp173_enable_adc(axp173, ADC_ENABLE_BIT_BAT_VOLT, 1);
+    axp173_get_bat_volt(axp173, &bat_volt);
+}
+
+
+void app_main(void) {   
+
+    //需要先初始化i2c总线
     i2c_bus_init(I2C_NUM_0);
-    axp173_init(AXP173_I2C_PORT, AXP173_I2C_ADDR);
 
-    // float bat;
-    // axp173_bat_info_t bat_info;
-
-    axp173_power_output_ctrl(OUTPUT_SW_LDO2, 1);
-    axp173_power_output_ctrl(OUTPUT_SW_LDO3, 1);
-
-    axp173_set_LDO2_volt(2.0);
-    axp173_set_LDO3_volt(3.0);
-
-    // axp173_set_LDO4_volt(1);
-
-    //setting
-    // axp173_enable_adc(ADC_ENABLE_BIT_VBUS_VOLT, 1);
-    // axp173_enable_adc(ADC_ENABLE_BIT_BAT_VOLT, 1);
+    axp173 = axp173_create(AXP173_I2C_PORT, AXP173_I2C_ADDR);
+    axp173_test1();
+    // axp173_test2();
+    // axp173_test3();
     while(1){
-        // axp173_get_VBUS_volt(&bat);
-        // axp173_get_bat_volt(&bat);
-        // axp173_get_bat_status(&bat_info);
         vTaskDelay(500/portTICK_PERIOD_MS);
     }
-} */
-
-void app_main(void)
-{   
-    // axp173_dev_t axp173;
-
-    i2c_bus_init(I2C_NUM_0);
-    // axp173_init(AXP173_I2C_PORT, AXP173_I2C_ADDR);
-
-    axp173_test3();
-
-    // // float bat;
-    // // axp173_bat_info_t bat_info;
-
-    // axp173_power_output_ctrl(OUTPUT_SW_LDO2, 1);
-    // axp173_power_output_ctrl(OUTPUT_SW_LDO3, 1);
-
-    // axp173_set_LDO2_volt(2.0);
-    // axp173_set_LDO3_volt(3.0);
-
-    // // axp173_set_LDO4_volt(1);
-
-    // //setting
-    // // axp173_enable_adc(ADC_ENABLE_BIT_VBUS_VOLT, 1);
-    // // axp173_enable_adc(ADC_ENABLE_BIT_BAT_VOLT, 1);
-    while(1){
-        // axp173_get_VBUS_volt(&bat);
-        // axp173_get_bat_volt(&bat);
-        // axp173_get_bat_status(&bat_info);
-        vTaskDelay(500/portTICK_PERIOD_MS);
-    }
+    axp173_delete(&axp173);
 }
 
 
