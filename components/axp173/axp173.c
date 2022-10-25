@@ -579,7 +579,7 @@ esp_err_t axp173_coulomb_counter_clear(axp173_handle_t axp173){
  * @return esp_err_t 
  */
 esp_err_t axp173_get_charge_coulomb_count(axp173_handle_t axp173, int32_t *charge_count){
-    uint8_t data[4]
+    uint8_t data[4];
     esp_err_t ret = axp173_read_bytes(axp173, AXP173_CHARGE_COULOMB, data, 4);
     *charge_count = (data[3]<<24 | data[2]<< 16 | data[1] << 8 | data[0]);
     
