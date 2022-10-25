@@ -153,16 +153,32 @@ enum {
     VHOLD_VOLT_4V7,
 };
 
+/* Voff 关机电压 */
 enum {
-    SHUTDOWN_VOLT_2V6 = 0,
-    SHUTDOWN_VOLT_2V7,
-    SHUTDOWN_VOLT_2V8,
-    SHUTDOWN_VOLT_2V9,
-    SHUTDOWN_VOLT_3V,
-    SHUTDOWN_VOLT_3V1,
-    SHUTDOWN_VOLT_3V2,
-    SHUTDOWN_VOLT_3V3,
+    VOFF_VOLT_2V6 = 0,
+    VOFF_VOLT_2V7,
+    VOFF_VOLT_2V8,
+    VOFF_VOLT_2V9,
+    VOFF_VOLT_3V,
+    VOFF_VOLT_3V1,
+    VOFF_VOLT_3V2,
+    VOFF_VOLT_3V3,
 };
+
+typedef enum {
+    SHUTDOWN_TIME_4S,
+    SHUTDOWN_TIME_6S,
+    SHUTDOWN_TIME_8S,
+    SHUTDOWN_TIME_10S,
+} shutdown_time_t;
+
+
+typedef enum {
+    LONGPRESS_TIME_1S,  //1s
+    LONGPRESS_TIME_1S5, //1.5s
+    LONGPRESS_TIME_2S,  //2s
+    LONGPRESS_TIME_2S5, //2.5s
+} longPress_time_t;
 
 
 // axp173 设备信息：addr port
@@ -214,7 +230,7 @@ esp_err_t axp173_VHOLD_enable(axp173_handle_t axp173, uint8_t enable);
 
 esp_err_t axp173_set_VHOLD_volt(axp173_handle_t axp173, uint8_t volt_select);
 
-esp_err_t axp173_set_shutdown_volt(axp173_handle_t axp173, uint8_t volt_select);
+esp_err_t axp173_set_VOFF_volt(axp173_handle_t axp173, uint8_t volt_select);
 
 esp_err_t axp173_shutdown(axp173_handle_t axp173, uint8_t shutdown);
 
@@ -236,7 +252,22 @@ esp_err_t axp173_set_TS_PIN_Current_output_way(axp173_handle_t axp173, uint8_t w
 
 esp_err_t axp173_select_TS_PIN_function(axp173_handle_t axp173, uint8_t func_select);
 
+esp_err_t axp173_coulomb_switch(axp173_handle_t axp173, uint8_t enable);
 
+esp_err_t axp173_coulomb_counter_pause(axp173_handle_t axp173);
+
+esp_err_t axp173_coulomb_counter_clear(axp173_handle_t axp173);
+
+esp_err_t axp173_get_charge_coulomb_count(axp173_handle_t axp173, int32_t *charge_count);
+
+esp_err_t axp173_get_discharge_coulomb_count(axp173_handle_t axp173, int32_t *discharge_count);
+
+esp_err_t axp173_set_shutdown_time(axp173_handle_t axp173, shutdown_time_t time);
+
+esp_err_t axp173_set_longPress_time(axp173_handle_t axp173, longPress_time_t time);
+
+//预设置
+esp_err_t apx173_init(axp173_handle_t axp173);
 
 
 #endif

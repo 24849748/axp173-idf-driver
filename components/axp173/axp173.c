@@ -121,12 +121,48 @@ esp_err_t axp173_delete(axp173_handle_t *axp173){
 }
 
 
-
-
-
 /* ========================================================= */
 
 /* ---------------------- app --------------------------- */
+
+
+esp_err_t apx173_init(axp173_handle_t axp173){
+    float bat_volt = 0;
+    float VBUS_volt = 0;
+
+    //设置通道电压
+    axp173_set_DC1_volt(axp173, 3.3);
+    axp173_set_LDO4_volt(axp173, 3.3);
+    //打开通道输出 打开DC1和LDO4，LDO23、DC2关闭
+    axp173_power_output_ctrl(axp173, OUTPUT_SW_DC1, 1);
+    axp173_power_output_ctrl(axp173, OUTPUT_SW_LDO4, 1);
+    axp173_power_output_ctrl(axp173, OUTPUT_SW_DC2, 0);
+    axp173_power_output_ctrl(axp173, OUTPUT_SW_LDO2, 0);
+    axp173_power_output_ctrl(axp173, OUTPUT_SW_LDO3, 0);
+    
+    //VBUS限压控制
+    axp173_set_VHOLD_volt(axp173, VHOLD_VOLT_4V4);
+    axp173_VHOLD_enable(axp173, 1);
+    //设置关机电压
+    axp173_set_VOFF_volt(axp173, VOFF_VOLT_2V9);
+    //启动充电功能
+    axp173_charge_enable(axp173, 1);
+    //设置电池充电电流和结束电流
+    axp173_set_charge_current(axp173, CHARGE_CURRENT_mA_780);
+    axp173_set_charge_end_current(axp173, 0);
+    //设置adc采样率 25Hz
+    axp173_set_ADC_sampling_freq(axp173, 0);
+    //电池、VBUS adc使能
+    axp173_enable_adc(axp173, ADC_ENABLE_BIT_BAT_VOLT, 1); 
+    axp173_enable_adc(axp173, ADC_ENABLE_BIT_VBUS_VOLT, 1); 
+    //读取一次电压
+    axp173_get_bat_volt(axp173, &bat_volt);
+    axp173_get_VBUS_volt(axp173,&VBUS_volt);
+
+    ESP_LOGI(TAG, "AXP173 init over!");
+    ESP_LOGI(TAG, "BAT volt: %.2f  VBUS volt: %.2f",bat_volt, VBUS_volt);
+    return ESP_OK;
+}
 
 
 /**
@@ -365,10 +401,10 @@ esp_err_t axp173_set_VHOLD_volt(axp173_handle_t axp173, uint8_t volt_select){
  * @brief 设置关机电压，默认2.9V
  * 
  * @param axp173    axp173设备句柄
- * @param volt_select   关机电压，见SHUTDOWN_VOLT_...
+ * @param volt_select   关机电压，见VOFF_VOLT_...
  * @return esp_err_t 
  */
-esp_err_t axp173_set_shutdown_volt(axp173_handle_t axp173, uint8_t volt_select){
+esp_err_t axp173_set_VOFF_volt(axp173_handle_t axp173, uint8_t volt_select){
     return axp173_write_byte(axp173, AXP173_SHUTDOWN_VOLT, volt_select);
 }
 
@@ -504,13 +540,94 @@ esp_err_t axp173_select_TS_PIN_function(axp173_handle_t axp173, uint8_t func_sel
     return axp173_write_bit(axp173, AXP173_ADC_RATE_TS_PIN, 2, func_select);
 }
 
+/**
+ * @brief 库仑计开关控制
+ * 
+ * @param axp173    axp173设备句柄
+ * @param enable    1->open; 0->close; 默认0
+ * @return esp_err_t 
+ */
+esp_err_t axp173_coulomb_switch(axp173_handle_t axp173, uint8_t enable){
+    return axp173_write_bit(axp173, AXP173_COULOMB_COUNTER, 7, enable);
+}
+
+/**
+ * @brief 库仑计暂停控制，该寄存器位会自清零
+ * 
+ * @param axp173    axp173设备句柄
+ * @return esp_err_t 
+ */
+esp_err_t axp173_coulomb_counter_pause(axp173_handle_t axp173){
+    return axp173_write_bit(axp173, AXP173_COULOMB_COUNTER, 6, 1);
+}
+
+/**
+ * @brief 清除库仑计控制，该寄存器位会自清零
+ * 
+ * @param axp173    axp173设备句柄
+ * @return esp_err_t 
+ */
+esp_err_t axp173_coulomb_counter_clear(axp173_handle_t axp173){
+    return axp173_write_bit(axp173, AXP173_COULOMB_COUNTER, 5, 1);
+}
+
+/**
+ * @brief 获取 电池 充电库仑计 数据
+ * 
+ * @param axp173    axp173设备句柄
+ * @param charge_count  充电计数
+ * @return esp_err_t 
+ */
+esp_err_t axp173_get_charge_coulomb_count(axp173_handle_t axp173, int32_t *charge_count){
+    uint8_t data[4]
+    esp_err_t ret = axp173_read_bytes(axp173, AXP173_CHARGE_COULOMB, data, 4);
+    *charge_count = (data[3]<<24 | data[2]<< 16 | data[1] << 8 | data[0]);
+    
+    return ret;
+}
+
+/**
+ * @brief 获取 电池 放电库仑计 数据
+ * 
+ * @param axp173    axp173设备句柄
+ * @param discharge_count 放电计数
+ * @return esp_err_t 
+ */
+esp_err_t axp173_get_discharge_coulomb_count(axp173_handle_t axp173, int32_t *discharge_count){
+    uint8_t data[4];
+    esp_err_t ret = axp173_read_bytes(axp173, AXP173_DISCHARGE_COULOMB, data, 4);
+    *discharge_count = (data[3]<<24 | data[2]<< 16 | data[1] << 8 | data[0]);
+
+    return ret;
+} 
+
+/**
+ * @brief 设置关机时间，长按PEK键时间，大于该值将关机
+ * 
+ * @param axp173 
+ * @param time 
+ * @return esp_err_t 
+ */
+esp_err_t axp173_set_shutdown_time(axp173_handle_t axp173, shutdown_time_t time){
+    return axp173_write_bits(axp173, AXP173_PEK, 0, 2, time);
+}
+
+/**
+ * @brief 设置长按键时间
+ * 
+ * @param axp173 
+ * @param time 
+ * @return esp_err_t 
+ */
+esp_err_t axp173_set_longPress_time(axp173_handle_t axp173, longPress_time_t time){
+    return axp173_write_bits(axp173, AXP173_PEK, 4, 2, time);
+}
+
 
 
 /**
  * @todo
- *      验证各通道设置电压   --LDO4 OK
- *      验证电压通道开关控制 -->ok
- *      写个init设置
+ *      测试coulomb相关函数
  *      conf
  */
 

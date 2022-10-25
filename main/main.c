@@ -66,15 +66,6 @@ void app_main(void) {
     axp173_delete(&axp173);
 }
 
-/**
- * 1.复制components文件夹下axp173、bus两个组件到工程中
- * 2.修改头文件中相关引脚定义
- * 3.使用 i2c_bus_init() 函数初始化 I2C 总线
- * 4.使用 axp173_create() 函数创建设备句柄
- * 5.执行你的操作
- * 6.使用完成后使用 axp173_delete() 函数释放资源
- */
-
 
 /* 
 .\..\..\..\..\esp-idf\export.ps1
