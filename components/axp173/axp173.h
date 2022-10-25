@@ -36,7 +36,7 @@
 #define AXP173_CHARGE_CONTROL_1 (0x33)  //充电控制寄存器 1
 #define AXP173_CHARGE_CONTROL_2 (0x34)  //充电控制寄存器 2
 
-// #define AXP173_PEK              (0x36)  //PEK 参数设置寄存器
+#define AXP173_PEK              (0x36)  //PEK 参数设置寄存器
 // #define AXP173_DCDC_FREQUENCY   (0x37)  //DCDC 转换器工作频率设置寄存器
 // #define AXP173_BAT_CHG_L_TEMP   (0x38)  //电池充电低温报警设置寄存器
 // #define AXP173_BAT_CHG_H_TEMP   (0x39)  //电池充电高温报警设置寄存器
