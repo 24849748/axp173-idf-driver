@@ -1,273 +1,57 @@
 #ifndef _AXP173_H_
 #define _AXP173_H_
 
+
 #include "driver/i2c.h"
+#include "axp173_cm.h"
+#include "axp173_reg.h"
 
 /* ↓ custom define */
-#define AXP173_I2C_PORT         I2C_NUM_0
 /* ↑ custom define */
 
-#define AXP173_I2C_ADDR         (0x34)      //axp173 i2c address
+// 基本只会存01的值
+typedef struct{
+    /* REG 00H: 输入电源状态 */
+    uint32_t acin_exist : 1;
+    uint32_t vbus_exist : 1;
+    uint32_t bat_current_dir : 1;   // 0:电池在放电；1:电池被充电
 
+    /* REG 01H: 电源工作模式以及充电状态指示 */
+    uint32_t axp_over_temp : 1;     // 0:未过温； 1:过温
+    uint32_t charge_idct : 1;       // 0:未充电或充电已完成； 1:正在充电
+    uint32_t bat_exist : 1;         // 0:无电池连接； 1:电池已连接
 
-/* registers */
-#define AXP173_POWER_STATUS     (0x00)
-#define AXP173_CHARGE_STATUS    (0x01)
-// #define AXP173_OTG_VBUS_STATUS  (0x04)
-
-
-
-#define AXP173_EXTEN_DC2_SW     (0x10)  //EXTEN & DC-DC2 开关控制寄存器
-#define AXP173_DC1_LDO234_SW    (0x12)  //DC-DC1/LDO4 & LDO2/3 开关控制寄存器
-
-/* 输出电压设置 */
-#define AXP173_DC2_VOLT         (0x23)  //DC-DC2 输出电压设置
-#define AXP173_DC2_VOLT_SLOPE   (0x25)  //DC-DC2 动态电压调节参数设置
-
-#define AXP173_DC1_VOLT         (0x26)  //DC-DC1 输出电压设置
-#define AXP173_LDO4_VOLT        (0x27)  //LDO4 输出电压设置
-#define AXP173_LDO23_VOLT       (0x28)  //LDO2/3 输出电压设置
-
-
-#define AXP173_VBUS_TO_IPSOUT   (0x30)  //VBUS-IPSOUT 通路设置寄存器
-#define AXP173_SHUTDOWN_VOLT    (0x31)  //VOFF 关机电压设置寄存器
-#define AXP173_SHUTDOWN_BAT_CHGLED  (0x32)  //关机、电池检测、CHGLED 控制寄存器
-
-#define AXP173_CHARGE_CONTROL_1 (0x33)  //充电控制寄存器 1
-#define AXP173_CHARGE_CONTROL_2 (0x34)  //充电控制寄存器 2
-
-#define AXP173_PEK              (0x36)  //PEK 参数设置寄存器
-// #define AXP173_DCDC_FREQUENCY   (0x37)  //DCDC 转换器工作频率设置寄存器
-// #define AXP173_BAT_CHG_L_TEMP   (0x38)  //电池充电低温报警设置寄存器
-// #define AXP173_BAT_CHG_H_TEMP   (0x39)  //电池充电高温报警设置寄存器
-
-// #define AXP173_APS_LOW_POWER1   (0x3a)  //APS 低电 Level1 设置寄存器
-// #define AXP173_APS_LOW_POWER2   (0x3b)  //APS 低电 Level2 设置寄存器
-// #define AXP173_BAT_DISCHG_L_TEMP    (0x3c)  //电池放电低温报警设置寄存器
-// #define AXP173_BAT_DISCHG_H_TEMP    (0x3d)  //电池放电高温报警设置寄存器
-
-
-#define AXP173_DCDC_MODE        (0x80)  //DCDC 工作模式设置寄存器
-#define AXP173_ADC_ENABLE_1     (0x82)  //ADC 使能设置寄存器 1
-#define AXP173_ADC_ENABLE_2     (0x83)  //ADC 使能设置寄存器 2
-#define AXP173_ADC_RATE_TS_PIN  (0x84)  //ADC 采样率设置，TS pin 控制寄存器
-
-
-// #define AXP173_TIMER_CONTROL            (0x8a)  //定时器控制寄存器
-// #define AXP173_VBUS_MONITOR             (0x8b)  //VBUS 监测设置寄存器
-// #define AXP173_TEMP_SHUTDOWN_CONTROL    (0x8f)  //过温关机控制寄存器
-
-
-/* Interrupt control registers */
-#define AXP173_IRQ_EN_CONTROL_1 (0x40)  //IRQ 使能控制寄存器 1
-#define AXP173_IRQ_EN_CONTROL_2 (0x41)  //IRQ 使能控制寄存器 2
-#define AXP173_IRQ_EN_CONTROL_3 (0x42)  //IRQ 使能控制寄存器 3
-#define AXP173_IRQ_EN_CONTROL_4 (0x43)  //IRQ 使能控制寄存器 4
-
-#define AXP173_IRQ_STATUS_1     (0x44)  //IRQ 状态寄存器 1
-#define AXP173_IRQ_STATUS_2     (0x45)  //IRQ 状态寄存器 2
-#define AXP173_IRQ_STATUS_3     (0x46)  //IRQ 状态寄存器 3
-#define AXP173_IRQ_STATUS_4     (0x47)  //IRQ 状态寄存器 4
-
-
-/* ADC data registers */
-#define AXP173_ACIN_VOLTAGE     (0x56)  //ACIN 电压 ADC 数据高 8 位, 低4位在 (0x57)
-#define AXP173_ACIN_CURRENT     (0x58)  //ACIN 电流 ADC 数据高 8 位, 低4位在 (0x59)
-#define AXP173_VBUS_VOLTAGE     (0x5a)  //VBUS 电压 ADC 数据高 8 位, 低4位在 (0x5b)
-#define AXP173_VBUS_CURRENT     (0x5c)  //VBUS 电流 ADC 数据高 8 位, 低4位在 (0x5d)
-
-//温度相关
-#define AXP173_TEMP             (0x5e)  //AXP173 内部温度监测 ADC 数据高 8 位, 低4位在 (0x5f)
-#define AXP173_TS_INPUT         (0x62)  //TS 输入 ADC 数据高 8 位，默认监测电池温度,, 低4位在 (0x63)
-
-
-#define AXP173_BAT_POWER                (0x70)  //电池瞬时功率高 8 位，中 8 位(0x71)， 高 8 位(0x72) 
-#define AXP173_BAT_VOLTAGE              (0x78)  //电池电压高 8 位，低 4 位(0x79)
-#define AXP173_CHARGE_CURREN            (0x7a)  //电池充电电流高 8 位, 低 5 位(0x7b)
-#define AXP173_DISCHARGE_CURRENT        (0x7c)  //电池放电电流高 8 位, 低 5 位(0x7d)
-#define AXP173_APS_VOLTAGE              (0x7e)  //APS 电压高 8 位, 低 4 位(0x7f)
-#define AXP173_CHARGE_COULOMB           (0xb0)  //电池充电库仑计数据寄存器 3,2(0xb1),1(0xb2),0(0xb3)
-#define AXP173_DISCHARGE_COULOMB        (0xb4)  //电池放电库仑计数据寄存器 3,2(0xb5),1(0xb6),0(oxb7)
-#define AXP173_COULOMB_COUNTER_CONTROL  (0xb8)  //库仑计控制寄存器
-
-/* Computed ADC */
-#define AXP173_COULOMB_COUNTER          (0xff)
-
+    /* REG 12H: 电源输出控制 */
+    uint32_t exten : 1;         // 0:关闭； 1:打开
+    uint32_t dcdc2 : 1;
+    uint32_t ldo3 : 1;
+    uint32_t ldo2 : 1;
+    uint32_t ldo4 : 1;
+    uint32_t dcdc1 : 1;
+}axp_info_t;
 
 
 /* ================================================================= */
 
-/* ADC使能 1, ADC channel bit, 用于控制开启对应ADC功能  reg: 0x82 */
-enum {
-    ADC_ENABLE_BIT_TS = 0,
-    ADC_ENABLE_BIT_APS_VOLT,
-    ADC_ENABLE_BIT_VBUS_CURRENT,
-    ADC_ENABLE_BIT_VBUS_VOLT,
-    ADC_ENABLE_BIT_ACIN_CURRENT,
-    ADC_ENABLE_BIT_ACIN_VOLT,
-    ADC_ENABLE_BIT_BAT_CURRENT,
-    ADC_ENABLE_BIT_BAT_VOLT,
-};
+esp_err_t axp_init();
+esp_err_t axp_en_ctrl(en_command_t command, bool enable);
+esp_err_t axp_set_volt(volt_setting_t channel, int volt);
+esp_err_t axp_read_info(axp_info_t *info);
+
+// about adc
+esp_err_t axp_set_adc_sample_rate(uint8_t rate);
+esp_err_t axp_read_adc_data(adc_data_t dc, float *buffer);
 
 
-/* 充电电流 */
-enum {
-    CHARGE_CURRENT_mA_100 = 0b0000,
-    CHARGE_CURRENT_mA_190,
-    CHARGE_CURRENT_mA_280,
-    CHARGE_CURRENT_mA_360,
-    CHARGE_CURRENT_mA_450,
-    CHARGE_CURRENT_mA_550,
-    CHARGE_CURRENT_mA_630,
-    CHARGE_CURRENT_mA_700,
-    CHARGE_CURRENT_mA_780,
-    CHARGE_CURRENT_mA_880,
-    CHARGE_CURRENT_mA_960,
-    CHARGE_CURRENT_mA_1000,
-    CHARGE_CURRENT_mA_1080,
-    CHARGE_CURRENT_mA_1160,
-    CHARGE_CURRENT_mA_1240,
-    CHARGE_CURRENT_mA_1320,
-};
+esp_err_t axp_pek_setting(uint8_t boot_time, uint8_t longpress_time, uint8_t shutdown_time);
+esp_err_t axp_ts_setting(uint8_t op_current, uint8_t op_way, uint8_t function);
 
+esp_err_t axp_colum_pause();
+esp_err_t axp_colum_clear();
+esp_err_t axp_read_columb_data(float *buffer);
 
-/* 输出通道 */
-enum {
-    OUTPUT_SW_DC1 = 0,
-    OUTPUT_SW_LDO4 = 1,
-    OUTPUT_SW_LDO2 = 2,
-    OUTPUT_SW_LDO3 = 3,
-    OUTPUT_SW_DC2 = 4,
-    OUTPUT_SW_EXTEN = 6,
-};
-
-/* VHOLD电压 */
-enum {
-    VHOLD_VOLT_4V = 0,
-    VHOLD_VOLT_4V1,
-    VHOLD_VOLT_4V2,
-    VHOLD_VOLT_4V3,
-    VHOLD_VOLT_4V4,
-    VHOLD_VOLT_4V5,
-    VHOLD_VOLT_4V6,
-    VHOLD_VOLT_4V7,
-};
-
-/* Voff 关机电压 */
-enum {
-    VOFF_VOLT_2V6 = 0,
-    VOFF_VOLT_2V7,
-    VOFF_VOLT_2V8,
-    VOFF_VOLT_2V9,
-    VOFF_VOLT_3V,
-    VOFF_VOLT_3V1,
-    VOFF_VOLT_3V2,
-    VOFF_VOLT_3V3,
-};
-
-typedef enum {
-    SHUTDOWN_TIME_4S,
-    SHUTDOWN_TIME_6S,
-    SHUTDOWN_TIME_8S,
-    SHUTDOWN_TIME_10S,
-} shutdown_time_t;
-
-
-typedef enum {
-    LONGPRESS_TIME_1S,  //1s
-    LONGPRESS_TIME_1S5, //1.5s
-    LONGPRESS_TIME_2S,  //2s
-    LONGPRESS_TIME_2S5, //2.5s
-} longPress_time_t;
-
-
-// axp173 设备信息：addr port
-typedef struct{
-    uint8_t addr;               //axp173地址
-    i2c_port_t port;            //axp173所在i2c总线端口
-} axp173_dev_t;
-typedef void* axp173_handle_t;
-
-
-/* 储存电池信息的结构体 */
-typedef struct{
-    bool currentPath;       //电池电流方向，1->in, 0->out
-    bool exist;             //1->电池存在，0->电池拔出
-    bool charge;            //1->battery is charging; 0->discharging or finished
-    bool temperature;       //1->over temperature; 0->isn't over temperature
-}axp173_bat_info_t;
-
-
-
-axp173_handle_t axp173_create(i2c_port_t port, uint8_t addr);
-
-esp_err_t axp173_delete(axp173_handle_t *axp173);
-
-esp_err_t axp173_enable_adc(axp173_handle_t axp173, uint8_t adc_bit, uint8_t enable);
-
-esp_err_t axp173_get_bat_volt(axp173_handle_t axp173, float *volt);
-
-esp_err_t axp173_get_VBUS_volt(axp173_handle_t axp173, float *volt);
-
-esp_err_t axp173_get_bat_status(axp173_handle_t axp173, axp173_bat_info_t *bat_info);
-
-esp_err_t axp173_power_output_ctrl(axp173_handle_t axp173, uint8_t ctrl_bit, uint8_t enable);
-
-esp_err_t axp173_set_DC2_volt(axp173_handle_t axp173, float volt);
-
-esp_err_t axp173_set_DC1_volt(axp173_handle_t axp173, float volt);
-
-esp_err_t axp173_set_LDO4_volt(axp173_handle_t axp173, float volt);
-
-esp_err_t axp173_set_LDO2_volt(axp173_handle_t axp173, float volt);
-
-esp_err_t axp173_set_LDO3_volt(axp173_handle_t axp173, float volt);
-
-
-/* ================以下未测试==================== */
-
-esp_err_t axp173_VHOLD_enable(axp173_handle_t axp173, uint8_t enable);
-
-esp_err_t axp173_set_VHOLD_volt(axp173_handle_t axp173, uint8_t volt_select);
-
-esp_err_t axp173_set_VOFF_volt(axp173_handle_t axp173, uint8_t volt_select);
-
-esp_err_t axp173_shutdown(axp173_handle_t axp173, uint8_t shutdown);
-
-esp_err_t axp173_charge_enable(axp173_handle_t axp173, uint8_t enable);
-
-esp_err_t axp173_set_charge_target_volt(axp173_handle_t axp173, uint8_t volt_select);
-
-esp_err_t axp173_set_charge_end_current(axp173_handle_t axp173, uint8_t end_current);
-
-esp_err_t axp173_set_charge_current(axp173_handle_t axp173, uint8_t current);
-
-esp_err_t axp173_internal_temperature_monitor_enable(axp173_handle_t axp173, uint8_t enable);
-
-esp_err_t axp173_set_ADC_sampling_freq(axp173_handle_t axp173, uint8_t freq_select);
-
-esp_err_t axp173_set_TS_PIN_output_Current(axp173_handle_t axp173, uint8_t Current_select);
-
-esp_err_t axp173_set_TS_PIN_Current_output_way(axp173_handle_t axp173, uint8_t way_select);
-
-esp_err_t axp173_select_TS_PIN_function(axp173_handle_t axp173, uint8_t func_select);
-
-esp_err_t axp173_coulomb_switch(axp173_handle_t axp173, uint8_t enable);
-
-esp_err_t axp173_coulomb_counter_pause(axp173_handle_t axp173);
-
-esp_err_t axp173_coulomb_counter_clear(axp173_handle_t axp173);
-
-esp_err_t axp173_get_charge_coulomb_count(axp173_handle_t axp173, int32_t *charge_count);
-
-esp_err_t axp173_get_discharge_coulomb_count(axp173_handle_t axp173, int32_t *discharge_count);
-
-esp_err_t axp173_set_shutdown_time(axp173_handle_t axp173, shutdown_time_t time);
-
-esp_err_t axp173_set_longPress_time(axp173_handle_t axp173, longPress_time_t time);
-
-//预设置
-esp_err_t apx173_init(axp173_handle_t axp173);
-
+// tools
+void axp_show_info(axp_info_t *info);
+uint8_t axp_op_generate_byte(bool dc1, bool dc2, bool exten, bool ldo2, bool ldo3, bool ldo4);
 
 #endif
